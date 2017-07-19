@@ -51,10 +51,7 @@ static const size_t kBitsPerComponent = 8;
         UIImage *imageWithoutAlpha = [UIImage imageWithCGImage:imageRefWithoutAlpha
                                                          scale:image.scale
                                                    orientation:image.imageOrientation];
-        
-        if (unsupportedColorSpace) {
-            CGColorSpaceRelease(colorspaceRef);
-        }
+    
         
         CGContextRelease(context);
         CGImageRelease(imageRefWithoutAlpha);
