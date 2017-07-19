@@ -25,7 +25,25 @@ static const size_t kBitsPerComponent = 8;
     @autoreleasepool{
         
         CGImageRef imageRef = image.CGImage;
-        CGColorSpaceRef colorspaceRef = [UIImage colorSpaceForImageRef:imageRef];
+        
+        CGImageAlphaInfo alpha = CGImageGetAlphaInfo(imageRef);
+        BOOL anyAlpha = (alpha == kCGImageAlphaFirst ||
+                                                    alpha == kCGImageAlphaLast ||
+                                                    alpha == kCGImageAlphaPremultipliedFirst ||
+                                                    alpha == kCGImageAlphaPremultipliedLast);
+        if (anyAlpha) { return image; } // do not decode images with alpha
+        
+        // current
+        CGColorSpaceModel imageColorSpaceModel = CGColorSpaceGetModel(CGImageGetColorSpace(imageRef));
+        CGColorSpaceRef colorspaceRef = CGImageGetColorSpace(imageRef);
+        
+        BOOL unsupportedColorSpace = (imageColorSpaceModel == kCGColorSpaceModelUnknown ||
+                                      imageColorSpaceModel == kCGColorSpaceModelMonochrome ||
+                                      imageColorSpaceModel == kCGColorSpaceModelCMYK ||
+                                      imageColorSpaceModel == kCGColorSpaceModelIndexed);
+        if (unsupportedColorSpace) {
+            colorspaceRef = CGColorSpaceCreateDeviceRGB();
+        }
         
         size_t width = CGImageGetWidth(imageRef);
         size_t height = CGImageGetHeight(imageRef);
@@ -51,6 +69,10 @@ static const size_t kBitsPerComponent = 8;
         UIImage *imageWithoutAlpha = [UIImage imageWithCGImage:imageRefWithoutAlpha
                                                          scale:image.scale
                                                    orientation:image.imageOrientation];
+        
+        if (unsupportedColorSpace) {
+            CGColorSpaceRelease(colorspaceRef);
+        }
         
         CGContextRelease(context);
         CGImageRelease(imageRefWithoutAlpha);
